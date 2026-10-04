@@ -13,9 +13,17 @@ jobs:
         run: yes | "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" --licenses > /dev/null || true
       - uses: gradle/actions/setup-gradle@v4
         with: { gradle-version: "8.9" }
-      - name: Build
+      - name: Build (tries older GeckoView versions in turn)
         working-directory: PrivacyFP
-        run: gradle :app:assembleDebug --no-daemon
+        run: |
+          for v in "138.+" "140.+" "136.+" "134.+" "132.+"; do
+            echo "=== trying GeckoView $v ==="
+            if gradle :app:assembleDebug --no-daemon -PgeckoVersion="$v"; then
+              echo "=== OK with GeckoView $v ==="
+              exit 0
+            fi
+          done
+          exit 1
       - uses: actions/upload-artifact@v4
         with:
           name: PrivacyFP-debug-apk
